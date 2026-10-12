@@ -1,0 +1,8 @@
+{
+  "name": "FarmSaver (Java 21 + Gradle)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": { "version": "21", "installGradle": "true" }
+  },
+  "customizations": { "vscode": { "extensions": ["vscjava.vscode-java-pack", "vscjava.vscode-gradle"] } }
+}

@@ -1,0 +1,113 @@
+# ===================== FarmSaver config.yml =====================
+# Fortune values. 100 = +1 guaranteed extra multiplier.
+# Example: +20 => 20% chance of double drops, +120 => always double, 20% chance of triple.
+fortune:
+  farming:
+    '1': 20
+    '2': 60
+    '3': 120
+  foraging:
+    '1': 20
+    '2': 60
+    '3': 120
+
+farming:
+  # Blocks affected by hoe enchants (Ageable crops must be fully grown).
+  crops: [WHEAT, CARROTS, POTATOES, BEETROOTS, NETHER_WART, COCOA, SWEET_BERRY_BUSH, MELON, PUMPKIN, SUGAR_CANE, CACTUS, BAMBOO]
+  # Ageable blocks where "age" does not mean maturity:
+  skip-maturity-check: [SUGAR_CANE, CACTUS, BAMBOO]
+
+foraging:
+  # Foraging Fortune (any tier) also replants saplings, even without the Replenish book.
+  auto-replant: true
+
+# Replenish book (hoe: crops, axe: trees)
+replenish:
+  # true  = costs 1 seed/sapling (taken from the drops, or your inventory if the drops have none)
+  # false = replanting is free
+  consume-items: true
+
+# Auto Pickup book (hoe: crops, axe: logs)
+auto-pickup:
+  # true = Auto Pickup also replants on its own (without needing the Replenish book)
+  includes-replant: false
+
+treecapitator:
+  max-blocks: 256
+  require-leaves: true      # stops it from deleting log cabins
+  sneak-to-disable: true    # hold sneak to break a single log
+  durability-per-block: 1
+
+# ---------------------------------------------------------------
+# Extra requirements for applying enchantments
+# ---------------------------------------------------------------
+requirements:
+  # Skill level requirement (needs AuraSkills). Set enabled: false to turn it off.
+  skill-level:
+    enabled: true
+    # What to do when AuraSkills is NOT installed:
+    #   false = requirement is ignored, true = nobody can meet it
+    block-without-auraskills: false
+    enchants:
+      farming_fortune:
+        skill: farming
+        levels: { '1': 5, '2': 15, '3': 30 }
+      foraging_fortune:
+        skill: foraging
+        levels: { '1': 5, '2': 15, '3': 30 }
+      treecapitator:
+        skill: foraging
+        levels: { '1': 25 }
+      trample_protection:
+        skill: farming
+        levels: { '1': 10 }
+      # Books that work on hoes AND axes use a skill per tool type:
+      replenish:
+        skill-by-tool: { HOE: farming, AXE: foraging }
+        levels: { '1': 10 }
+      auto_pickup:
+        skill-by-tool: { HOE: farming, AXE: foraging }
+        levels: { '1': 15 }
+  # Item costs (iron, diamond, netherite...) are defined in recipe.yml.
+  # Set enabled: false to ignore ALL item costs and only use the other requirements.
+  items:
+    enabled: true
+
+gui:
+  title: "&8Enchant Item"
+  creative-free: false      # creative players skip costs
+
+# ---------------------------------------------------------------
+# AuraSkills bonus XP (on top of the XP AuraSkills already gives for the block break)
+#   bonus XP = (per-harvest + bonus_items * per-bonus-item) * tier-multiplier * global-multiplier
+# Only paid when the tool has Farming/Foraging Fortune. Raise these numbers for more XP.
+# ---------------------------------------------------------------
+auraskills:
+  enabled: true
+  xp:
+    global-multiplier: 1.0
+    farming:
+      per-harvest: 2.0
+      per-bonus-item: 4.0
+      tier-multiplier: { '1': 1.0, '2': 1.75, '3': 2.5 }
+    foraging:
+      per-harvest: 2.0
+      per-bonus-item: 4.0
+      tier-multiplier: { '1': 1.0, '2': 1.75, '3': 2.5 }
+
+messages:
+  prefix: "&8[&aFarmSaver&8] "
+  no-permission: "&cYou don't have permission."
+  players-only: "&cOnly players can use this command."
+  reloaded: "&aConfiguration and recipes reloaded."
+  select-first: "&eSelect an enchantment book first."
+  no-tool: "&ePlace a hoe, axe or boots in the tool slot first."
+  invalid-tool: "&cOnly hoes, axes and boots can be placed here."
+  not-applicable: "&cThat enchantment can't be applied to this item."
+  unknown: "&cUnknown enchantment tier."
+  already-has: "&cYour item already has this tier or higher."
+  need-previous: "&cYou must apply the previous tier first."
+  not-enough-xp: "&cYou don't have enough XP levels."
+  not-enough-skill: "&cYou don't meet the requirement: &f{skill} Level {level}&c."
+  not-enough-items: "&cYou don't have the required items."
+  applied: "&aApplied &f{enchant}&a to your item!"

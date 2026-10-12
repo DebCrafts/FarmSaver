@@ -1,0 +1,18 @@
+name: FarmSaver
+version: '${version}'
+main: com.farmsaver.FarmSaverPlugin
+api-version: '1.20'
+description: Custom farming/foraging enchantments with a GUI.
+softdepend: [AuraSkills]
+commands:
+  fenc:
+    description: Open the FarmSaver enchant GUI
+    aliases: [farmsaver]
+    usage: /fenc [reload]
+permissions:
+  farmsaver.use:
+    description: Use /fenc
+    default: true
+  farmsaver.admin:
+    description: Reload the plugin
+    default: op

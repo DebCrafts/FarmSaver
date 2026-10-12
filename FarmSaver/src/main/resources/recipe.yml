@@ -1,0 +1,70 @@
+# ===================== FarmSaver recipe.yml =====================
+# Costs for every enchantment tier. Tiers must be applied in order (I -> II -> III).
+# applies-to: HOE, AXE, BOOTS
+# requirements: any Material name -> amount (iron, diamond, netherite, ...)
+enchantments:
+  farming_fortune:
+    display-name: "&6Farming Fortune"
+    description: "&7Chance for extra crop drops."
+    applies-to: [HOE]
+    tiers:
+      '1':
+        xp-levels: 5
+        requirements: { IRON_INGOT: 8 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 16, DIAMOND: 4 }
+      '3':
+        xp-levels: 30
+        requirements: { DIAMOND: 16, NETHERITE_INGOT: 1 }
+
+  foraging_fortune:
+    display-name: "&2Foraging Fortune"
+    description: "&7Extra log drops + auto-replant."
+    applies-to: [AXE]
+    tiers:
+      '1':
+        xp-levels: 5
+        requirements: { IRON_INGOT: 8 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 16, DIAMOND: 4 }
+      '3':
+        xp-levels: 30
+        requirements: { DIAMOND: 16, NETHERITE_INGOT: 1 }
+
+  treecapitator:
+    display-name: "&cTreecapitator"
+    description: "&7Fells the whole tree at once."
+    applies-to: [AXE]
+    tiers:
+      '1':
+        xp-levels: 40
+        requirements: { DIAMOND: 32, NETHERITE_INGOT: 3, IRON_BLOCK: 8 }
+
+  trample_protection:
+    display-name: "&bTrample Protection"
+    description: "&7Never trample farmland again."
+    applies-to: [BOOTS]
+    tiers:
+      '1':
+        xp-levels: 10
+        requirements: { IRON_INGOT: 12, DIAMOND: 2 }
+
+  replenish:
+    display-name: "&aReplenish"
+    description: "&7Replants crops (hoe) and trees (axe) after harvesting."
+    applies-to: [HOE, AXE]
+    tiers:
+      '1':
+        xp-levels: 20
+        requirements: { DIAMOND: 8, IRON_INGOT: 16 }
+
+  auto_pickup:
+    display-name: "&9Auto Pickup"
+    description: "&7Harvested crops (hoe) and logs (axe) go straight to your inventory."
+    applies-to: [HOE, AXE]
+    tiers:
+      '1':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 16, HOPPER: 4 }
