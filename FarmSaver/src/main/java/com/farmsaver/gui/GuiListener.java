@@ -7,21 +7,28 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
-/** Note: uses event.getInventory() (top inventory) instead of getView() for cross-version binary compatibility. */
+/**
+ * Routes by player instead of Inventory#getHolder(): getHolder() can snapshot block entities
+ * (chests etc.), which is costly for every click on the whole server. A player can only have one
+ * inventory open, so "this player has our GUI open" is exactly equivalent.
+ */
 public final class GuiListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onClick(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof EnchantGui gui) gui.handleClick(e);
+        EnchantGui gui = EnchantGui.of(e.getWhoClicked());
+        if (gui != null) gui.handleClick(e);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDrag(InventoryDragEvent e) {
-        if (e.getInventory().getHolder() instanceof EnchantGui gui) gui.handleDrag(e);
+        EnchantGui gui = EnchantGui.of(e.getWhoClicked());
+        if (gui != null) gui.handleDrag(e);
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent e) {
-        if (e.getInventory().getHolder() instanceof EnchantGui gui) gui.handleClose();
+        EnchantGui gui = EnchantGui.of(e.getPlayer());
+        if (gui != null) gui.handleClose();
     }
 }

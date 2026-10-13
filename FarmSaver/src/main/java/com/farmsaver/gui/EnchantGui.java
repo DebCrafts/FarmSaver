@@ -8,6 +8,7 @@ import com.farmsaver.util.Text;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -38,16 +39,23 @@ public final class EnchantGui implements InventoryHolder {
     public static final int SHELF = 48;      // bookshelf
     public static final int CLOSE = 49;      // barrier
     public static final int HELP = 50;       // book
+    public static final int PREV = 47;       // previous page arrow
+    public static final int NEXT = 51;       // next page arrow
     private static final int[][] ROWS = {
             {12, 13, 14, 15, 16},
             {21, 22, 23, 24, 25},
             {30, 31, 32, 33, 34}
     };
 
-    private static final Set<EnchantGui> OPEN = new HashSet<>();
+    /** Open GUIs by player: listeners find ours with a map lookup and never call Inventory#getHolder(). */
+    private static final Map<UUID, EnchantGui> OPEN = new HashMap<>();
 
     public static void closeAll() {
-        for (EnchantGui g : new ArrayList<>(OPEN)) g.player.closeInventory();
+        for (EnchantGui g : new ArrayList<>(OPEN.values())) g.player.closeInventory();
+    }
+
+    public static EnchantGui of(HumanEntity who) {
+        return OPEN.get(who.getUniqueId());
     }
 
     private record Selection(EnchantDef def, int tier) {}
@@ -59,6 +67,9 @@ public final class EnchantGui implements InventoryHolder {
     private final Map<Integer, Selection> slots = new HashMap<>();
     private int selectedSlot = -1;
     private ToolType viewType;
+    private final ItemStack filler = Text.item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());   // built once per GUI
+    private int page = 0;
+    private int pageCount = 1;
 
     public EnchantGui(FarmSaverPlugin plugin, Player player) {
         this.plugin = plugin;
@@ -74,8 +85,8 @@ public final class EnchantGui implements InventoryHolder {
 
     public void open() {
         refresh();
-        OPEN.add(this);
-        player.openInventory(inv);
+        player.openInventory(inv);       // closes any previous GUI first (its close event runs before we register)
+        OPEN.put(player.getUniqueId(), this);
     }
 
     // ------------------------------------------------------------------ rendering
@@ -110,7 +121,6 @@ public final class EnchantGui implements InventoryHolder {
     public void refresh() {
         EnchantManager mgr = plugin.enchants();
         slots.clear();
-        ItemStack filler = Text.item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
         for (int i = 0; i < 54; i++) if (i != TOOL) inv.setItem(i, filler);
 
         ItemStack tool = tool();
@@ -119,24 +129,48 @@ public final class EnchantGui implements InventoryHolder {
         ToolType type = tool == null ? null : ToolType.of(tool);
         viewType = type;
         if (type != null) {
+            // Lay every (enchant, tier) out on pages of 3 rows x 5 columns; one enchant's tiers stay on one row.
+            record Placed(int slot, Selection sel, int cur) {}
+            List<List<Placed>> pages = new ArrayList<>();
+            List<Placed> pg = new ArrayList<>();
             int row = 0;
             int col = 0;
             for (EnchantDef def : mgr.forType(type)) {
                 int n = Math.min(def.tiers().size(), 5);
-                if (col > 0 && col + n > 5) {   // keep one enchant's tiers on the same row
+                if (col > 0 && col + n > 5) {
                     row++;
                     col = 0;
                 }
-                if (row >= ROWS.length) break;
+                if (row >= ROWS.length) {          // page is full -> start a new one
+                    pages.add(pg);
+                    pg = new ArrayList<>();
+                    row = 0;
+                    col = 0;
+                }
                 int cur = mgr.getLevel(tool, def);
                 for (Map.Entry<Integer, EnchantDef.Tier> en : def.tiers().entrySet()) {
                     if (col >= 5) break;
-                    int slot = ROWS[row][col++];
-                    slots.put(slot, new Selection(def, en.getKey()));
-                    inv.setItem(slot, book(def, en.getKey(), en.getValue(), cur, slot == selectedSlot));
+                    pg.add(new Placed(ROWS[row][col++], new Selection(def, en.getKey()), cur));
                 }
             }
+            if (!pg.isEmpty()) pages.add(pg);
+            pageCount = Math.max(1, pages.size());
+            page = Math.max(0, Math.min(page, pageCount - 1));
+            if (!pages.isEmpty()) {
+                for (Placed pl : pages.get(page)) {
+                    slots.put(pl.slot(), pl.sel());
+                    EnchantDef.Tier cost = pl.sel().def().tiers().get(pl.sel().tier());
+                    inv.setItem(pl.slot(), book(pl.sel().def(), pl.sel().tier(), cost, pl.cur(), pl.slot() == selectedSlot));
+                }
+            }
+        } else {
+            page = 0;
+            pageCount = 1;
         }
+        if (page > 0)
+            inv.setItem(PREV, Text.item(Material.ARROW, "&ePrevious page", List.of("&7Page " + page + "/" + pageCount)));
+        if (page < pageCount - 1)
+            inv.setItem(NEXT, Text.item(Material.ARROW, "&eNext page", List.of("&7Page " + (page + 2) + "/" + pageCount)));
         if (!slots.containsKey(selectedSlot)) selectedSlot = -1;
 
         inv.setItem(APPLY, applyButton());
@@ -145,7 +179,7 @@ public final class EnchantGui implements InventoryHolder {
         inv.setItem(SHELF, shelf(type));
         inv.setItem(CLOSE, Text.item(Material.BARRIER, "&cClose", List.of("&7Returns your tool.")));
         inv.setItem(HELP, Text.item(Material.BOOK, "&eHow it works", List.of(
-                "&71. Place a hoe, axe or boots in the slot.",
+                "&71. Place a tool or armor piece in the slot.",
                 "&72. Click an enchantment book to select it.",
                 "&73. Click the enchanting table to apply.",
                 "", "&7Tiers must be applied in order.")));
@@ -253,6 +287,7 @@ public final class EnchantGui implements InventoryHolder {
                 if (tool() == null && valid(it)) {
                     inv.setItem(TOOL, it.clone());
                     e.setCurrentItem(null);
+                    page = 0;
                     refresh();
                 } else if (it != null && !it.getType().isAir() && tool() == null) {
                     player.sendMessage(plugin.msg("invalid-tool"));
@@ -269,6 +304,18 @@ public final class EnchantGui implements InventoryHolder {
         }
         if (slot == CLOSE) {
             player.closeInventory();
+            return;
+        }
+        if (slot == PREV && page > 0) {
+            page--;
+            selectedSlot = -1;
+            refresh();
+            return;
+        }
+        if (slot == NEXT && page < pageCount - 1) {
+            page++;
+            selectedSlot = -1;
+            refresh();
             return;
         }
         if (slot == APPLY) {
@@ -322,6 +369,7 @@ public final class EnchantGui implements InventoryHolder {
             }
         }
         selectedSlot = -1;
+        page = 0;
         refresh();
     }
 
@@ -365,7 +413,7 @@ public final class EnchantGui implements InventoryHolder {
     }
 
     public void handleClose() {
-        OPEN.remove(this);
+        OPEN.remove(player.getUniqueId(), this);
         ItemStack tool = tool();
         if (tool == null) return;
         inv.setItem(TOOL, null);

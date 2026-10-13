@@ -1,4 +1,7 @@
 # ===================== FarmSaver config.yml =====================
+# Do not edit: used to migrate old config files automatically.
+config-version: 2
+
 # Fortune values. 100 = +1 guaranteed extra multiplier.
 # Example: +20 => 20% chance of double drops, +120 => always double, 20% chance of triple.
 fortune:
@@ -13,7 +16,7 @@ fortune:
 
 farming:
   # Blocks affected by hoe enchants (Ageable crops must be fully grown).
-  crops: [WHEAT, CARROTS, POTATOES, BEETROOTS, NETHER_WART, COCOA, SWEET_BERRY_BUSH, MELON, PUMPKIN, SUGAR_CANE, CACTUS, BAMBOO]
+  crops: [WHEAT, CARROTS, POTATOES, BEETROOTS, NETHER_WART, COCOA, SWEET_BERRY_BUSH, MELON, PUMPKIN, SUGAR_CANE, CACTUS, BAMBOO, TORCHFLOWER, PITCHER_PLANT]
   # Ageable blocks where "age" does not mean maturity:
   skip-maturity-check: [SUGAR_CANE, CACTUS, BAMBOO]
 
@@ -23,9 +26,32 @@ foraging:
 
 # Replenish book (hoe: crops, axe: trees)
 replenish:
-  # true  = costs 1 seed/sapling (taken from the drops, or your inventory if the drops have none)
+  enabled: true
+  # true  = replanting needs the planting item and takes it (default, vanilla-like)
   # false = replanting is free
   consume-items: true
+  # Where the planting item comes from:
+  #   inventory             = player's inventory only (default)
+  #   drops-then-inventory  = the harvest drops first, then the inventory
+  seed-source: inventory
+  # Tell the player when they lack the planting item (max once every 3 seconds)
+  missing-item-message: true
+  # Per-crop settings. enabled / item / amount. Only these crops are supported (they have a valid
+  # replant mechanic). Melon and pumpkin keep their stems and sugar cane/bamboo/cactus keep their
+  # base, so they need no replanting. SEGMENT crops are replanted only when the BASE block is broken.
+  crops:
+    WHEAT: { enabled: true, item: WHEAT_SEEDS, amount: 1 }
+    CARROTS: { enabled: true, item: CARROT, amount: 1 }
+    POTATOES: { enabled: true, item: POTATO, amount: 1 }
+    BEETROOTS: { enabled: true, item: BEETROOT_SEEDS, amount: 1 }
+    NETHER_WART: { enabled: true, item: NETHER_WART, amount: 1 }
+    COCOA: { enabled: true, item: COCOA_BEANS, amount: 1 }          # needs a jungle log to be placed
+    SWEET_BERRY_BUSH: { enabled: true, item: SWEET_BERRIES, amount: 1 }
+    TORCHFLOWER: { enabled: true, item: TORCHFLOWER_SEEDS, amount: 1 }
+    PITCHER_PLANT: { enabled: false, item: PITCHER_POD, amount: 1 }  # untested - enable after live testing
+    SUGAR_CANE: { enabled: false, item: SUGAR_CANE, amount: 1 }
+    BAMBOO: { enabled: false, item: BAMBOO, amount: 1 }
+    CACTUS: { enabled: false, item: CACTUS, amount: 1 }
 
 # Auto Pickup book (hoe: crops, axe: logs)
 auto-pickup:
@@ -51,31 +77,127 @@ requirements:
     enchants:
       farming_fortune:
         skill: farming
-        levels: { '1': 5, '2': 15, '3': 30 }
+        levels: { '1': 3, '2': 7, '3': 15 }
       foraging_fortune:
         skill: foraging
-        levels: { '1': 5, '2': 15, '3': 30 }
+        levels: { '1': 3, '2': 7, '3': 15 }
       treecapitator:
         skill: foraging
-        levels: { '1': 25 }
+        levels: { '1': 9 }
       trample_protection:
         skill: farming
-        levels: { '1': 10 }
+        levels: { '1': 5 }
       # Books that work on hoes AND axes use a skill per tool type:
       replenish:
         skill-by-tool: { HOE: farming, AXE: foraging }
-        levels: { '1': 10 }
+        levels: { '1': 5 }
       auto_pickup:
         skill-by-tool: { HOE: farming, AXE: foraging }
-        levels: { '1': 15 }
+        levels: { '1': 6 }
+      exp_archery:
+        skill: archery
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_fighting:
+        skill: fighting
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_defense:
+        skill: defense
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_farming:
+        skill: farming
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_foraging:
+        skill: foraging
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_mining:
+        skill: mining
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_fishing:
+        skill: fishing
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_excavation:
+        skill: excavation
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_agility:
+        skill: agility
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_alchemy:
+        skill: alchemy
+        levels: { '1': 3, '2': 7, '3': 15 }
+      exp_enchanting:
+        skill: enchanting
+        levels: { '1': 3, '2': 7, '3': 15 }
   # Item costs (iron, diamond, netherite...) are defined in recipe.yml.
   # Set enabled: false to ignore ALL item costs and only use the other requirements.
   items:
-    enabled: true
+    enabled: true   # = require-materials. false: only XP levels (and skill levels) are charged
+
+# ---------------------------------------------------------------
+# AuraSkills EXP multiplier enchantments ("<Skill> EXP" books)
+# Applied through AuraSkills' XpGainEvent: final XP = AuraSkills XP x multiplier.
+# multiplier 1.5 = +50%. Values must be > 0 and are capped by max-multiplier.
+#
+# Which item counts (the stacking policy):
+#   sources   = equipment slots that are checked, in order:
+#               MAIN_HAND, OFF_HAND, HELMET, CHESTPLATE, LEGGINGS, BOOTS
+#   stacking  = HIGHEST        best single item (default; Defense uses ADDITIVE)
+#               FIRST          first item with the enchant
+#               ADDITIVE       1 + sum of (multiplier - 1)
+#               MULTIPLICATIVE product of all multipliers
+# Only the enchant of the matching skill is ever used, items elsewhere in the inventory never count.
+# ---------------------------------------------------------------
+exp-multiplier:
+  enabled: true
+  max-multiplier: 10.0
+  skills:
+    archery:
+      sources: [MAIN_HAND, OFF_HAND]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    fighting:
+      sources: [MAIN_HAND]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    defense:
+      sources: [HELMET, CHESTPLATE, LEGGINGS, BOOTS]
+      stacking: ADDITIVE   # every EQUIPPED armor piece with Defense EXP adds its bonus
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    farming:
+      sources: [MAIN_HAND]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    foraging:
+      sources: [MAIN_HAND]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    mining:
+      sources: [MAIN_HAND]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    fishing:
+      sources: [MAIN_HAND, OFF_HAND]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    excavation:
+      sources: [MAIN_HAND]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    agility:
+      sources: [BOOTS]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    alchemy:
+      sources: [LEGGINGS]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
+    enchanting:
+      sources: [CHESTPLATE]
+      stacking: HIGHEST
+      levels: { '1': 1.5, '2': 3, '3': 5.0 }
 
 gui:
   title: "&8Enchant Item"
-  creative-free: false      # creative players skip costs
+  creative-free: true      # creative players skip costs
 
 # ---------------------------------------------------------------
 # AuraSkills bonus XP (on top of the XP AuraSkills already gives for the block break)
@@ -85,6 +207,8 @@ gui:
 auraskills:
   enabled: true
   xp:
+    # Fortune bonus XP (separate from the EXP multiplier books)
+    fortune-bonus-enabled: true
     global-multiplier: 1.0
     farming:
       per-harvest: 2.0
@@ -109,5 +233,6 @@ messages:
   need-previous: "&cYou must apply the previous tier first."
   not-enough-xp: "&cYou don't have enough XP levels."
   not-enough-skill: "&cYou don't meet the requirement: &f{skill} Level {level}&c."
+  replenish-missing-item: "&eReplenish: you need &f{amount}x {item}&e in your inventory to replant."
   not-enough-items: "&cYou don't have the required items."
   applied: "&aApplied &f{enchant}&a to your item!"

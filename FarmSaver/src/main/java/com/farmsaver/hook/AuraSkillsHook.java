@@ -5,11 +5,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /**
- * Soft integration with AuraSkills through reflection, so the plugin compiles and runs
- * with or without AuraSkills installed.
+ * Soft integration with AuraSkills (reflection, so the plugin runs with or without it).
+ * Verified against the AuraSkills API docs: AuraSkillsApi#get(), #getUser(UUID),
+ * SkillsUser#addSkillXp(Skill,double), SkillsUser#getSkillLevel(Skill), Skills enum.
  */
 public final class AuraSkillsHook {
     private final FarmSaverPlugin plugin;
@@ -18,8 +22,9 @@ public final class AuraSkillsHook {
     private Method getUser;
     private Method addSkillXp;
     private Method getSkillLevel;
-    private Object farming;
-    private Object foraging;
+    private final Map<String, Object> skills = new HashMap<>();
+    /** True while FarmSaver itself is adding XP, so the XP multiplier listener ignores it. */
+    private boolean internal;
 
     public AuraSkillsHook(FarmSaverPlugin plugin) {
         this.plugin = plugin;
@@ -27,6 +32,7 @@ public final class AuraSkillsHook {
 
     public void init() {
         active = false;
+        skills.clear();
         if (!plugin.getConfig().getBoolean("auraskills.enabled", true)) return;
         if (!Bukkit.getPluginManager().isPluginEnabled("AuraSkills")) return;
         try {
@@ -39,13 +45,10 @@ public final class AuraSkillsHook {
             getUser = apiCls.getMethod("getUser", UUID.class);
             addSkillXp = userCls.getMethod("addSkillXp", skillIface, double.class);
             getSkillLevel = userCls.getMethod("getSkillLevel", skillIface);
-            for (Object c : skillsEnum.getEnumConstants()) {
-                String n = ((Enum<?>) c).name();
-                if (n.equals("FARMING")) farming = c;
-                if (n.equals("FORAGING")) foraging = c;
-            }
-            active = farming != null && foraging != null;
-            if (active) plugin.getLogger().info("Hooked into AuraSkills.");
+            for (Object c : skillsEnum.getEnumConstants())
+                skills.put(((Enum<?>) c).name().toLowerCase(Locale.ROOT), c);
+            active = skills.containsKey("farming");
+            if (active) plugin.getLogger().info("Hooked into AuraSkills (" + skills.size() + " skills).");
         } catch (Throwable t) {
             plugin.getLogger().warning("AuraSkills found but the hook failed (" + t + "). Integration disabled.");
         }
@@ -55,13 +58,20 @@ public final class AuraSkillsHook {
         return active;
     }
 
-    /** @return the player's AuraSkills level for "farming"/"foraging", or -1 if unavailable. */
+    public boolean isInternal() {
+        return internal;
+    }
+
+    /** @param skill lower-case skill key, e.g. "farming"
+     *  @return the player's AuraSkills level for the skill, or -1 if unavailable. */
     public int getLevel(Player p, String skill) {
         if (!active) return -1;
+        Object sk = skills.get(skill);
+        if (sk == null) return -1;
         try {
             Object user = getUser.invoke(api, p.getUniqueId());
             if (user == null) return -1;
-            Object r = getSkillLevel.invoke(user, skill.equals("farming") ? farming : foraging);
+            Object r = getSkillLevel.invoke(user, sk);
             return r instanceof Number n ? n.intValue() : -1;
         } catch (Throwable t) {
             plugin.getLogger().warning("AuraSkills getLevel failed: " + t);
@@ -69,16 +79,21 @@ public final class AuraSkillsHook {
         }
     }
 
-    /** @param skill "farming" or "foraging" */
+    /** Adds bonus XP. The XP multiplier listener skips it (no double multiplication). */
     public void addXp(Player p, String skill, double amount) {
         if (!active || amount <= 0) return;
+        Object sk = skills.get(skill);
+        if (sk == null) return;
+        internal = true;
         try {
             Object user = getUser.invoke(api, p.getUniqueId());
             if (user == null) return;
-            addSkillXp.invoke(user, skill.equals("farming") ? farming : foraging, amount);
+            addSkillXp.invoke(user, sk, amount);
         } catch (Throwable t) {
             plugin.getLogger().warning("AuraSkills addXp failed: " + t);
             active = false;
+        } finally {
+            internal = false;
         }
     }
 }

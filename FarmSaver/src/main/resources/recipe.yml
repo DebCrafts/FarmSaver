@@ -1,6 +1,8 @@
 # ===================== FarmSaver recipe.yml =====================
 # Costs for every enchantment tier. Tiers must be applied in order (I -> II -> III).
-# applies-to: HOE, AXE, BOOTS
+# applies-to: HOE, AXE, PICKAXE, SHOVEL, SWORD, MACE, SPEAR, BOW, CROSSBOW, FISHING_ROD,
+#             HELMET, CHESTPLATE, LEGGINGS, BOOTS
+# enabled: false (optional, per enchantment) removes it from the GUI and disables its effect.
 # requirements: any Material name -> amount (iron, diamond, netherite, ...)
 enchantments:
   farming_fortune:
@@ -12,11 +14,11 @@ enchantments:
         xp-levels: 5
         requirements: { IRON_INGOT: 8 }
       '2':
-        xp-levels: 15
-        requirements: { IRON_INGOT: 16, DIAMOND: 4 }
+        xp-levels: 12
+        requirements: { IRON_INGOT: 16, DIAMOND: 2 }
       '3':
-        xp-levels: 30
-        requirements: { DIAMOND: 16, NETHERITE_INGOT: 1 }
+        xp-levels: 25
+        requirements: { DIAMOND: 8, IRON_BLOCK: 1 }
 
   foraging_fortune:
     display-name: "&2Foraging Fortune"
@@ -27,11 +29,11 @@ enchantments:
         xp-levels: 5
         requirements: { IRON_INGOT: 8 }
       '2':
-        xp-levels: 15
-        requirements: { IRON_INGOT: 16, DIAMOND: 4 }
+        xp-levels: 12
+        requirements: { IRON_INGOT: 16, DIAMOND: 2 }
       '3':
-        xp-levels: 30
-        requirements: { DIAMOND: 16, NETHERITE_INGOT: 1 }
+        xp-levels: 25
+        requirements: { DIAMOND: 8, IRON_BLOCK: 1 }
 
   treecapitator:
     display-name: "&cTreecapitator"
@@ -39,8 +41,8 @@ enchantments:
     applies-to: [AXE]
     tiers:
       '1':
-        xp-levels: 40
-        requirements: { DIAMOND: 32, NETHERITE_INGOT: 3, IRON_BLOCK: 8 }
+        xp-levels: 20
+        requirements: { DIAMOND: 12, IRON_BLOCK: 1 }
 
   trample_protection:
     display-name: "&bTrample Protection"
@@ -48,17 +50,19 @@ enchantments:
     applies-to: [BOOTS]
     tiers:
       '1':
-        xp-levels: 10
-        requirements: { IRON_INGOT: 12, DIAMOND: 2 }
+        xp-levels: 8
+        requirements: { IRON_INGOT: 10, DIAMOND: 1 }
 
   replenish:
+    enabled: true
     display-name: "&aReplenish"
+    # applies-to: [HOE] = crops only. AXE keeps the tree replanting added earlier.
     description: "&7Replants crops (hoe) and trees (axe) after harvesting."
     applies-to: [HOE, AXE]
     tiers:
       '1':
-        xp-levels: 20
-        requirements: { DIAMOND: 8, IRON_INGOT: 16 }
+        xp-levels: 15
+        requirements: { DIAMOND: 4, IRON_INGOT: 12 }
 
   auto_pickup:
     display-name: "&9Auto Pickup"
@@ -67,4 +71,185 @@ enchantments:
     tiers:
       '1':
         xp-levels: 15
-        requirements: { IRON_INGOT: 16, HOPPER: 4 }
+        requirements: { IRON_INGOT: 16, HOPPER: 2 }
+
+# ================= AuraSkills EXP multiplier enchantments =================
+# The multipliers per level are in config.yml -> exp-multiplier.skills.<skill>.levels
+# Tiers here = levels that can be applied. Costs: xp-levels + requirements (items).
+# Item costs can be switched off globally with config.yml -> requirements.items.enabled
+
+  exp_archery:
+    enabled: true
+    display-name: "&cArchery EXP"
+    description: "&7Increases Archery EXP gained."
+    applies-to: [BOW]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_fighting:
+    enabled: true
+    display-name: "&4Fighting EXP"
+    description: "&7Increases Fighting EXP gained."
+    applies-to: [SWORD, AXE, MACE, SPEAR]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_defense:
+    enabled: true
+    display-name: "&9Defense EXP"
+    description: "&7Increases Defense EXP gained."
+    applies-to: [HELMET, CHESTPLATE, LEGGINGS, BOOTS]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_farming:
+    enabled: true
+    display-name: "&6Farming EXP"
+    description: "&7Increases Farming EXP gained."
+    applies-to: [HOE, AXE]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_foraging:
+    enabled: true
+    display-name: "&2Foraging EXP"
+    description: "&7Increases Foraging EXP gained."
+    applies-to: [AXE]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_mining:
+    enabled: true
+    display-name: "&7Mining EXP"
+    description: "&7Increases Mining EXP gained."
+    applies-to: [PICKAXE]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_fishing:
+    enabled: true
+    display-name: "&bFishing EXP"
+    description: "&7Increases Fishing EXP gained."
+    applies-to: [FISHING_ROD]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_excavation:
+    enabled: true
+    display-name: "&eExcavation EXP"
+    description: "&7Increases Excavation EXP gained."
+    applies-to: [SHOVEL]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_agility:
+    enabled: true
+    display-name: "&aAgility EXP"
+    description: "&7Increases Agility EXP gained."
+    applies-to: [BOOTS]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_alchemy:
+    enabled: true
+    display-name: "&dAlchemy EXP"
+    description: "&7Increases Alchemy EXP gained."
+    applies-to: [LEGGINGS]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
+
+  exp_enchanting:
+    enabled: true
+    display-name: "&5Enchanting EXP"
+    description: "&7Increases Enchanting EXP gained."
+    applies-to: [CHESTPLATE]
+    tiers:
+      '1':
+        xp-levels: 8
+        requirements: { IRON_INGOT: 12, DIAMOND: 1 }
+      '2':
+        xp-levels: 15
+        requirements: { IRON_INGOT: 24, DIAMOND: 2 }
+      '3':
+        xp-levels: 25
+        requirements: { DIAMOND: 6, IRON_BLOCK: 1 }
